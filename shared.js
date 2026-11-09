@@ -601,38 +601,85 @@ function supportsLocalAi(lang) {
   return Boolean(NLLB_CODES[lang]);
 }
 
-function getLocalAi() {
-  if (!localAiPipeline) {
-    localAiPipeline = (async () => {
-      const { pipeline, env } = await import(TRANSFORMERS_URL);
-      env.allowLocalModels = false;
-      const files = {};
-      return pipeline("translation", LOCAL_AI_MODEL, {
-        dtype: "q8",
-        progress_callback: (info) => {
-          if (info.status !== "progress" || !info.total) return;
-          files[info.file] = { loaded: info.loaded, total: info.total };
-          const loaded = Object.values(files).reduce((sum, file) => sum + file.loaded, 0);
-          const total = Object.values(files).reduce((sum, file) => sum + file.total, 0);
-          localAiProgress?.(`翻訳AIを準備しています(初回のみ)… ${Math.round(loaded / 1048576)} / ${Math.round(total / 1048576)} MB`);
-        },
-      });
-    })().catch((error) => {
-      localAiPipeline = null;
-      throw error;
+// 翻訳AIは重い処理なので、画面とは別のスレッド(Web Worker)で実行する。
+// 画面側で実行すると、Chromeが「ページが応答しません」と表示してしまうため。
+const LOCAL_AI_WORKER_SOURCE = `
+import { pipeline, env } from "${TRANSFORMERS_URL}";
+env.allowLocalModels = false;
+let translatorPromise = null;
+const files = {};
+function getTranslator() {
+  if (!translatorPromise) {
+    translatorPromise = pipeline("translation", "${LOCAL_AI_MODEL}", {
+      dtype: "q8",
+      progress_callback: (info) => {
+        if (info.status !== "progress" || !info.total) return;
+        files[info.file] = { loaded: info.loaded, total: info.total };
+        let loaded = 0;
+        let total = 0;
+        for (const item of Object.values(files)) { loaded += item.loaded; total += item.total; }
+        self.postMessage({ type: "progress", loaded, total });
+      },
     });
   }
-  return localAiPipeline;
+  return translatorPromise;
+}
+self.onmessage = async (event) => {
+  const { id, text, tgt } = event.data;
+  try {
+    const translator = await getTranslator();
+    const [result] = await translator(text, { src_lang: "jpn_Jpan", tgt_lang: tgt, max_new_tokens: 400 });
+    self.postMessage({ type: "result", id, text: (result && result.translation_text) || "" });
+  } catch (error) {
+    translatorPromise = null;
+    self.postMessage({ type: "error", id, message: String((error && error.message) || error) });
+  }
+};
+`;
+
+let localAiWorker = null;
+let localAiSeq = 0;
+const localAiPending = new Map();
+
+function getLocalAiWorker() {
+  if (!localAiWorker) {
+    const url = URL.createObjectURL(new Blob([LOCAL_AI_WORKER_SOURCE], { type: "text/javascript" }));
+    localAiWorker = new Worker(url, { type: "module" });
+    localAiWorker.onmessage = (event) => {
+      const message = event.data;
+      if (message.type === "progress") {
+        localAiProgress?.(`翻訳AIを準備しています(初回のみ)… ${Math.round(message.loaded / 1048576)} / ${Math.round(message.total / 1048576)} MB`);
+        return;
+      }
+      const pending = localAiPending.get(message.id);
+      if (!pending) return;
+      localAiPending.delete(message.id);
+      if (message.type === "result") pending.resolve(message.text);
+      else pending.reject(new Error(message.message));
+    };
+    localAiWorker.onerror = (event) => {
+      localAiPending.forEach((pending) => pending.reject(new Error(event.message || "翻訳AIでエラーが発生しました。")));
+      localAiPending.clear();
+      localAiWorker = null;
+    };
+  }
+  return localAiWorker;
+}
+
+function runLocalAi(text, targetCode) {
+  return new Promise((resolve, reject) => {
+    localAiSeq += 1;
+    localAiPending.set(localAiSeq, { resolve, reject });
+    getLocalAiWorker().postMessage({ id: localAiSeq, text, tgt: targetCode });
+  });
 }
 
 async function translateWithLocalAi(text, lang) {
   if (!localAiEnabled || !supportsLocalAi(lang)) return null;
   try {
-    const translator = await getLocalAi();
     const parts = [];
     for (const chunk of splitTranslationText(text, 180)) {
-      const [result] = await translator(chunk, { src_lang: "jpn_Jpan", tgt_lang: NLLB_CODES[lang], max_new_tokens: 400 });
-      parts.push((result?.translation_text || "").trim());
+      parts.push((await runLocalAi(chunk, NLLB_CODES[lang])).trim());
     }
     const joined = parts.filter(Boolean).join(NO_SPACE_JOIN.has(lang) ? "" : " ");
     return joined || null;
