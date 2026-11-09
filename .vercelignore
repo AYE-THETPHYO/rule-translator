@@ -1,0 +1,7 @@
+.claude
+.vercel
+.env.local
+.env*
+.gitignore
+.vercelignore
+

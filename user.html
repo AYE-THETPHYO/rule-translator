@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>利用者画面 | 会社ルール</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  </head>
+  <body class="user-page">
+    <nav class="top-nav">
+      <a class="brand" href="user.html">会社ルール</a>
+    </nav>
+
+    <div class="user-shell">
+      <section class="user-bar">
+        <label class="lang-select-label">
+          <span>言語 / Language</span>
+          <select id="user-lang" aria-label="表示言語"></select>
+        </label>
+      </section>
+
+      <section id="list-view">
+        <h1 class="user-title">会社ルール一覧</h1>
+        <p id="loading-note" class="muted"></p>
+        <input id="user-search" class="list-search" type="search" placeholder="検索 / Search" aria-label="ルールを検索" />
+        <div id="user-rule-list" class="user-rule-list"></div>
+      </section>
+
+      <section id="detail-view" hidden>
+        <button id="back-btn" class="secondary-btn back-btn" type="button">← 一覧へ戻る</button>
+        <article id="user-detail" class="user-detail"></article>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+    <script src="shared.js"></script>
+    <script src="cloud.js"></script>
+    <script src="user.js"></script>
+  </body>
+</html>

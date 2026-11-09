@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理者画面 | 会社ルールPDF翻訳システム</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a class="brand" href="index.html">会社ルール翻訳</a>
+      <div class="nav-links">
+        <a href="admin.html" class="active">管理者画面</a>
+        <a href="user.html">利用者画面</a>
+        <span id="admin-user" class="admin-user"></span>
+        <button id="logout-btn" class="small-btn" type="button" hidden>ログアウト</button>
+      </div>
+    </nav>
+
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">管理者画面</p>
+          <h1>会社ルールの登録・翻訳</h1>
+          <p class="hero-text">
+            日本語のPDF・スライド・ポスター画像をアップロードすると、日本語の文字を読み取って各言語に翻訳し、写真やレイアウトをそのまま残した翻訳PDFを作成します。利用者はQRコードから閲覧できます。
+          </p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span id="stat-rules">0</span><small>登録ルール</small></div>
+          <div class="stat"><span id="stat-langs">0</span><small>対応言語</small></div>
+        </div>
+      </header>
+
+      <section id="login-panel" class="panel login-panel" hidden>
+        <h2>管理者ログイン</h2>
+        <p class="muted">ルールの登録・編集は管理者のみ行えます。利用者はQRコードから閲覧するだけなのでログインは不要です。</p>
+        <form id="login-form">
+          <label>
+            メールアドレス
+            <input id="login-email" type="email" autocomplete="username" required />
+          </label>
+          <label>
+            パスワード
+            <input id="login-password" type="password" autocomplete="current-password" minlength="6" required />
+          </label>
+          <div id="login-message" class="status-message" role="status"></div>
+          <div class="action-row">
+            <button type="submit" class="primary-btn">ログイン</button>
+            <button id="signup-btn" type="button" class="secondary-btn">新規登録</button>
+          </div>
+          <small>初めての場合は、メールアドレスとパスワードを入力して「新規登録」を押し、届いた確認メールのリンクを開いてください。管理者として使うには、システム担当者による管理者登録が必要です。</small>
+        </form>
+      </section>
+
+      <main id="admin-main" class="layout" hidden>
+        <section class="panel admin-panel">
+          <div class="panel-head">
+            <h2 id="form-title">会社ルール翻訳フォーム</h2>
+            <button id="reset-form" class="secondary-btn" type="button">新規作成</button>
+          </div>
+
+          <form id="rule-form">
+            <label>
+              ルール名
+              <input id="title" name="title" type="text" placeholder="例: 休憩室の利用ルール" required />
+            </label>
+
+            <label>
+              日本語のファイル(PDF・スライドPDF・画像)
+              <input id="pdfUpload" name="pdfUpload" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" />
+              <small>PowerPointは「ファイル → エクスポート → PDF」で保存してからアップロードしてください。編集時は未選択でも元のファイルを維持します。</small>
+            </label>
+
+            <fieldset>
+              <legend>翻訳PDFの形式</legend>
+              <label class="mode-option">
+                <input type="radio" name="outputMode" value="layout" checked />
+                レイアウト維持(写真・スライド・ポスター向け) — 各日本語の下に翻訳を追加
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="outputMode" value="text" />
+                テキストのみ(文章が多い規定向け) — 翻訳文だけのPDF
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>翻訳先言語</legend>
+              <input id="language-search" type="search" placeholder="言語を検索" aria-label="言語を検索" />
+              <div class="lang-tools">
+                <button id="select-all-langs" class="small-btn" type="button">すべて選択</button>
+                <button id="select-visible-langs" class="small-btn" type="button">検索結果を選択</button>
+                <button id="clear-langs" class="small-btn" type="button">選択解除</button>
+                <span id="selected-count" class="lang-count"></span>
+              </div>
+              <div id="language-options" class="language-options"></div>
+              <small id="engine-note"></small>
+            </fieldset>
+
+            <div id="blocks-section" class="blocks-section" hidden>
+              <div class="blocks-head">
+                <strong>読み取った日本語</strong>
+                <span id="blocks-count" class="lang-count"></span>
+              </div>
+              <small>読み取りの間違いはここで直せます。翻訳しない部分は「除外」してください。</small>
+              <div id="blocks-list" class="blocks-list"></div>
+            </div>
+
+            <label id="text-section">
+              日本語本文
+              <textarea id="japaneseText" name="japaneseText" rows="8" placeholder="ファイルをアップロードすると本文が自動で読み取られます。読み取れない場合はここに入力してください。"></textarea>
+            </label>
+
+            <div id="status-message" class="status-message" role="status"></div>
+
+            <div class="action-row">
+              <button id="submit-btn" type="submit" class="primary-btn">翻訳して保存</button>
+              <button id="export-selected" class="secondary-btn" type="button">表示中のPDFをダウンロード</button>
+            </div>
+          </form>
+
+          <div class="panel-head secondary-head">
+            <h3>登録済み会社ルール一覧</h3>
+            <span id="count-badge" class="badge">0件</span>
+          </div>
+          <input id="rule-search" class="list-search" type="search" placeholder="ルール名・本文で検索" aria-label="ルールを検索" />
+          <div id="rule-list" class="manual-list"></div>
+        </section>
+
+        <section class="panel viewer-panel">
+          <div class="panel-head">
+            <h2>翻訳プレビュー</h2>
+            <a id="open-user-view" class="secondary-btn link-btn" href="user.html" target="_blank" rel="noopener">利用者画面で開く</a>
+          </div>
+
+          <div id="viewer-card" class="viewer-card">
+            <p class="empty-state">左の一覧からルールを選択してください。</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+    <script src="shared.js"></script>
+    <script src="cloud.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
