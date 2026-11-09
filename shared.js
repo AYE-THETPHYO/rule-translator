@@ -340,12 +340,22 @@ async function translateWithChrome(text, lang) {
 }
 
 // 翻訳の順番: 1) Chrome内蔵翻訳 2) PC内の翻訳AI(管理者画面のみ) 3) MyMemory(オンライン・上限あり)
+const translationEnginesUsed = new Set(); // 直近の翻訳で使った方法(画面表示用)
+
 async function translateText(text, lang) {
   const viaChrome = await translateWithChrome(text, lang);
-  if (viaChrome) return viaChrome;
+  if (viaChrome) {
+    translationEnginesUsed.add("Chrome内蔵翻訳");
+    return viaChrome;
+  }
   const viaLocalAi = await translateWithLocalAi(text, lang);
-  if (viaLocalAi) return viaLocalAi;
-  return translateWithMyMemory(text, lang);
+  if (viaLocalAi) {
+    translationEnginesUsed.add("翻訳AI");
+    return viaLocalAi;
+  }
+  const viaMyMemory = await translateWithMyMemory(text, lang);
+  translationEnginesUsed.add("MyMemory");
+  return viaMyMemory;
 }
 
 function hasChromeTranslator() {
@@ -625,10 +635,16 @@ function getTranslator() {
   return translatorPromise;
 }
 self.onmessage = async (event) => {
-  const { id, text, tgt } = event.data;
+  const { id, text, tgt, maxTokens } = event.data;
   try {
     const translator = await getTranslator();
-    const [result] = await translator(text, { src_lang: "jpn_Jpan", tgt_lang: tgt, max_new_tokens: 400 });
+    const [result] = await translator(text, {
+      src_lang: "jpn_Jpan",
+      tgt_lang: tgt,
+      max_new_tokens: maxTokens || 200,
+      repetition_penalty: 1.3,
+      no_repeat_ngram_size: 3,
+    });
     self.postMessage({ type: "result", id, text: (result && result.translation_text) || "" });
   } catch (error) {
     translatorPromise = null;
@@ -667,22 +683,60 @@ function getLocalAiWorker() {
 }
 
 function runLocalAi(text, targetCode) {
+  // 出力が入力より極端に長くならないよう上限を付ける(作り話の防止)
+  const maxTokens = Math.min(256, Math.ceil(text.length * 3) + 16);
   return new Promise((resolve, reject) => {
     localAiSeq += 1;
     localAiPending.set(localAiSeq, { resolve, reject });
-    getLocalAiWorker().postMessage({ id: localAiSeq, text, tgt: targetCode });
+    getLocalAiWorker().postMessage({ id: localAiSeq, text, tgt: targetCode, maxTokens });
   });
+}
+
+// 翻訳AIには短い単位で渡す(長い文や、メニューのような箇条書きは崩れやすいため)
+function splitForLocalAi(text) {
+  const pieces = [];
+  String(text).split(/\n+/).forEach((line) => {
+    line.split(/(?<=[。！？!?])|[　 ]+/).forEach((sentence) => {
+      let rest = sentence.trim();
+      while (rest.length > 80) {
+        let cut = rest.lastIndexOf("、", 80);
+        if (cut < 20) cut = 80;
+        else cut += 1;
+        pieces.push(rest.slice(0, cut).trim());
+        rest = rest.slice(cut).trim();
+      }
+      if (rest) pieces.push(rest);
+    });
+  });
+  return pieces;
+}
+
+// 同じ語句が続けて繰り返された部分を1回にまとめる
+function removeRepeats(text) {
+  return text
+    .replace(/(\S+(?:\s+\S+){0,3}?)(?:[\s,、，]+\1(?=[\s,、，.。!?]|$))+/giu, "$1")
+    .replace(/(.{2,12}?)\1{2,}/gu, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 async function translateWithLocalAi(text, lang) {
   if (!localAiEnabled || !supportsLocalAi(lang)) return null;
   try {
-    const parts = [];
-    for (const chunk of splitTranslationText(text, 180)) {
-      parts.push((await runLocalAi(chunk, NLLB_CODES[lang])).trim());
+    const lines = [];
+    for (const line of String(text).split(/\n+/)) {
+      const parts = [];
+      for (const piece of splitForLocalAi(line)) {
+        if (!JA_PATTERN.test(piece) || /^[\d,.]+\s*(円|個|枚|本|分|時間?|日|人|回|%|％)?$/.test(piece)) {
+          parts.push(piece); // 数字・英語・記号だけの部分はそのまま
+          continue;
+        }
+        parts.push(removeRepeats((await runLocalAi(piece, NLLB_CODES[lang])).trim()));
+      }
+      const joinedLine = parts.filter(Boolean).join(NO_SPACE_JOIN.has(lang) ? "" : " ");
+      if (joinedLine) lines.push(joinedLine);
     }
-    const joined = parts.filter(Boolean).join(NO_SPACE_JOIN.has(lang) ? "" : " ");
-    return joined || null;
+    return lines.join("\n") || null;
   } catch (error) {
     console.warn("翻訳AIでの翻訳に失敗しました", error);
     return null;

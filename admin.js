@@ -403,10 +403,20 @@ async function downloadSelectedPdf() {
 }
 
 // ===== 翻訳・PDF作成(保存と再翻訳で共通) =====
+let lastEngines = {}; // 言語ごとに使った翻訳方法
+
+function engineSummary() {
+  const entries = Object.entries(lastEngines);
+  if (!entries.length) return "";
+  return ` 翻訳方法: ${entries.map(([lang, engines]) => `${LANGS[lang]?.name || lang}=${engines.join("+")}`).join("、")}`;
+}
+
 async function translatePayload(rule, langs) {
   const failed = [];
+  lastEngines = {};
   for (const [index, lang] of langs.entries()) {
     showStatus(`翻訳中です… (${index + 1}/${langs.length}: ${LANGS[lang].name})`);
+    translationEnginesUsed.clear();
     try {
       if (rule.blocks.length) {
         const texts = await translateBlocks(rule.blocks, lang);
@@ -415,6 +425,7 @@ async function translatePayload(rule, langs) {
       } else {
         rule.translations[lang] = await translateText(rule.sourceText, lang);
       }
+      lastEngines[lang] = [...translationEnginesUsed];
     } catch {
       failed.push(lang);
     }
@@ -558,7 +569,7 @@ ruleForm.addEventListener("submit", async (event) => {
     render();
 
     const doneMessage = wasEditing ? "ルールと翻訳PDFを更新しました。" : "翻訳PDFを作成して保存しました。";
-    showStatus(failedLangs.length ? `${doneMessage} ${pendingMessage(failedLangs)}` : doneMessage, failedLangs.length > 0);
+    showStatus(`${failedLangs.length ? `${doneMessage} ${pendingMessage(failedLangs)}` : doneMessage}${engineSummary()}`, failedLangs.length > 0);
   } catch (error) {
     showStatus(`保存に失敗しました: ${error.message}`, true);
   } finally {
