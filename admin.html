@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>管理者画面 | 会社ルールPDF翻訳システム</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -117,10 +120,24 @@
             <div id="status-message" class="status-message" role="status"></div>
 
             <div class="action-row">
-              <button id="submit-btn" type="submit" class="primary-btn">翻訳して保存</button>
+              <button id="submit-btn" type="submit" class="primary-btn">翻訳する(保存前に確認できます)</button>
               <button id="export-selected" class="secondary-btn" type="button">表示中のPDFをダウンロード</button>
             </div>
           </form>
+
+          <section id="review-panel" class="review-panel" hidden>
+            <div class="review-head">
+              <h3 id="review-title">翻訳の確認・修正</h3>
+              <p class="muted">自動翻訳は、商品名・機械名などの名前や専門用語を間違えることがあります。間違いはここで直してください。直した内容がPDFに使われます。</p>
+            </div>
+            <p id="review-note" class="notice" hidden></p>
+            <div id="review-tabs" class="review-tabs"></div>
+            <div id="review-list" class="review-list"></div>
+            <div class="action-row review-actions">
+              <button id="review-save" class="primary-btn" type="button">この内容でPDFを作成して保存</button>
+              <button id="review-cancel" class="secondary-btn" type="button">戻る</button>
+            </div>
+          </section>
 
           <div class="panel-head secondary-head">
             <h3>登録済み会社ルール一覧</h3>

@@ -267,7 +267,7 @@ function resetForm() {
   renderBlocks();
   renderLanguageOptions();
   formTitle.textContent = "会社ルール翻訳フォーム";
-  submitBtn.textContent = "翻訳して保存";
+  submitBtn.textContent = "翻訳する(保存前に確認できます)";
 }
 
 function populateForm(rule) {
@@ -281,7 +281,7 @@ function populateForm(rule) {
   const existing = new Set(Object.keys(rule.translations).filter((key) => key !== "ja"));
   renderLanguageOptions(existing.size ? existing : DEFAULT_LANGUAGES);
   formTitle.textContent = `編集中: ${rule.title}`;
-  submitBtn.textContent = "更新して保存";
+  submitBtn.textContent = "翻訳する(保存前に確認できます)";
   showStatus("");
   titleInput.focus();
 }
@@ -334,6 +334,7 @@ function renderList() {
           <div class="card-actions">
             <button class="small-btn" data-action="select" data-id="${rule.id}" type="button">閲覧</button>
             <button class="small-btn" data-action="edit" data-id="${rule.id}" type="button">編集</button>
+            ${langCount ? `<button class="small-btn" data-action="edit-translations" data-id="${rule.id}" type="button">訳を修正</button>` : ""}
             ${rule.pendingLangs?.length ? `<button class="small-btn" data-action="retry" data-id="${rule.id}" type="button">翻訳をやり直す</button>` : ""}
             <button class="small-btn danger" data-action="delete" data-id="${rule.id}" type="button">削除</button>
           </div>
@@ -485,7 +486,15 @@ async function retryTranslation(rule) {
   }
 }
 
-// ===== 保存 =====
+// ===== 保存(1. 翻訳 → 2. 確認・修正 → 3. PDF作成・保存) =====
+const reviewPanel = document.getElementById("review-panel");
+const reviewTabs = document.getElementById("review-tabs");
+const reviewList = document.getElementById("review-list");
+const reviewNote = document.getElementById("review-note");
+const reviewTitle = document.getElementById("review-title");
+let reviewState = null;
+let reviewLang = "";
+
 ruleForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (isBusy) return;
@@ -509,7 +518,7 @@ ruleForm.addEventListener("submit", async (event) => {
   }
 
   if (selectedLanguages.length > MANY_LANGUAGES && !window.confirm(
-    `${selectedLanguages.length}言語に翻訳します。時間がかかり、無料翻訳サービスの1日の上限に達する場合があります。続けますか？`,
+    `${selectedLanguages.length}言語に翻訳します。時間がかかります。続けますか？`,
   )) return;
 
   const wasEditing = Boolean(editingId);
@@ -534,24 +543,127 @@ ruleForm.addEventListener("submit", async (event) => {
       blocks: blocks.map(({ page, x0, y0, x1, y1, lineHeight, text }) => ({ page, x0, y0, x1, y1, lineHeight, text })),
       translations: { ja: sourceText },
       blockTranslations: {},
+      pendingLangs: [],
       pdfName: currentFile ? currentFile.name : previous?.pdfName || "",
       createdAt: previous?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // 翻訳(失敗した言語は「未翻訳」として保存し、あとで再翻訳できる)
     showStatus("翻訳の準備をしています…");
     await chromeReady;
     const failedLangs = await translatePayload(payload, selectedLanguages);
     payload.pendingLangs = failedLangs;
 
-    // 翻訳PDFを作成
-    await deleteRulePdfs(ruleId, currentFile ? [] : ["src", "ja"]);
-    if (currentFile) {
-      await savePdf(ruleId, "src", currentFile);
-      const isPdf = currentFile.type === "application/pdf";
-      const original = isPdf ? currentFile : await createOverlayPdf(pages.map((page) => page.canvas), [], null, "ja");
-      await savePdf(ruleId, "ja", original);
+    openReview({ payload, pages, file: currentFile, wasEditing, fromForm: true, failedLangs });
+    showStatus(`翻訳が終わりました。訳を確認・修正してから「この内容でPDFを作成して保存」を押してください。${engineSummary()}`);
+  } catch (error) {
+    showStatus(`翻訳に失敗しました: ${error.message}`, true);
+  } finally {
+    setBusy(false);
+  }
+});
+
+// ===== 翻訳の確認・修正 =====
+function reviewLangs() {
+  return Object.keys(reviewState.payload.translations).filter((lang) => lang !== "ja");
+}
+
+function openReview(state) {
+  reviewState = state;
+  reviewLang = reviewLangs()[0] || "";
+  reviewTitle.textContent = `翻訳の確認・修正: ${state.payload.title}`;
+  ruleForm.hidden = true;
+  reviewPanel.hidden = false;
+  renderReview();
+  reviewPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeReview() {
+  reviewState = null;
+  reviewPanel.hidden = true;
+  ruleForm.hidden = false;
+}
+
+function renderReview() {
+  const { payload, failedLangs } = reviewState;
+  const langs = reviewLangs();
+  const notes = [];
+  if (!langs.length) notes.push("翻訳できた言語がありません。日本語の原本だけを保存します。");
+  if (failedLangs.length) notes.push(`翻訳できなかった言語(あとで「翻訳をやり直す」で翻訳できます): ${failedLangs.map((lang) => LANGS[lang]?.name || lang).join("、")}`);
+  reviewNote.textContent = notes.join(" ");
+  reviewNote.hidden = !notes.length;
+
+  reviewTabs.innerHTML = langs
+    .map((lang) => `<button class="chip ${lang === reviewLang ? "active" : ""}" data-review-lang="${lang}" type="button">${escapeHtml(LANGS[lang]?.name || lang)}</button>`)
+    .join("");
+
+  if (!reviewLang) {
+    reviewList.innerHTML = "";
+    return;
+  }
+  const dirAttr = RTL_LANGS.has(reviewLang) ? 'dir="rtl"' : "";
+  const blockTexts = payload.blockTranslations?.[reviewLang];
+  const rows = payload.blocks.length && blockTexts
+    ? payload.blocks.map((block, index) => ({ ja: block.text, text: blockTexts[index] || "", index }))
+    : [{ ja: payload.sourceText, text: payload.translations[reviewLang] || "", index: -1 }];
+
+  reviewList.innerHTML = rows
+    .map((row, position) => `
+      <div class="review-row">
+        <div class="review-ja"><span class="review-num">${position + 1}</span>${escapeHtml(row.ja)}</div>
+        <textarea data-index="${row.index}" lang="${reviewLang}" ${dirAttr} rows="${Math.min(8, Math.max(2, Math.ceil(row.text.length / 40)))}">${escapeHtml(row.text)}</textarea>
+      </div>`)
+    .join("");
+}
+
+reviewTabs.addEventListener("click", (event) => {
+  const lang = event.target.closest("[data-review-lang]")?.dataset.reviewLang;
+  if (!lang) return;
+  reviewLang = lang;
+  renderReview();
+});
+
+reviewList.addEventListener("input", (event) => {
+  const index = Number(event.target.dataset.index);
+  if (Number.isNaN(index) || !reviewState) return;
+  const { payload } = reviewState;
+  if (index >= 0) payload.blockTranslations[reviewLang][index] = event.target.value;
+  else payload.translations[reviewLang] = event.target.value;
+});
+
+document.getElementById("review-cancel").addEventListener("click", () => {
+  const fromForm = reviewState?.fromForm;
+  closeReview();
+  showStatus(fromForm ? "保存を取り消しました。内容を変えて、もう一度「翻訳して保存」を押せます。" : "訳の修正を取り消しました。");
+});
+
+document.getElementById("review-save").addEventListener("click", finishSave);
+
+async function finishSave() {
+  if (isBusy || !reviewState) return;
+  const { payload, file, wasEditing, fromForm, failedLangs } = reviewState;
+  let { pages } = reviewState;
+  setBusy(true);
+  try {
+    Object.entries(payload.blockTranslations || {}).forEach(([lang, texts]) => {
+      payload.translations[lang] = texts.join("\n");
+    });
+    const previousVersion = getRuleById(payload.id)?.updatedAt;
+    payload.updatedAt = new Date().toISOString();
+
+    if (!pages && payload.mode === "layout") {
+      showStatus("元のファイルを読み込んでいます…");
+      const source = await loadPdf(payload.id, "src", previousVersion);
+      if (!source) throw new Error("元のファイルが見つかりません。");
+      pages = await renderSourcePages(source);
+    }
+
+    await deleteRulePdfs(payload.id, file ? [] : ["src", "ja"]);
+    if (file) {
+      await savePdf(payload.id, "src", file);
+      const isPdf = file.type === "application/pdf";
+      const original = isPdf ? file : await createOverlayPdf(pages.map((page) => page.canvas), [], null, "ja");
+      await savePdf(payload.id, "ja", original);
     }
     const pdfLangs = Object.keys(payload.translations).filter((lang) => lang !== "ja");
     await buildTranslatedPdfs(payload, pages, pdfLangs);
@@ -559,23 +671,24 @@ ruleForm.addEventListener("submit", async (event) => {
     showStatus("保存しています…");
     await saveRule(payload);
     if (wasEditing) {
-      rules = rules.map((rule) => (rule.id === ruleId ? payload : rule));
+      rules = rules.map((rule) => (rule.id === payload.id ? payload : rule));
     } else {
       rules.unshift(payload);
     }
-    selectedId = ruleId;
-    selectedLang = pdfLangs[0] || "ja";
-    resetForm();
+    selectedId = payload.id;
+    selectedLang = pdfLangs.includes(reviewLang) ? reviewLang : pdfLangs[0] || "ja";
+    closeReview();
+    if (fromForm) resetForm();
     render();
 
     const doneMessage = wasEditing ? "ルールと翻訳PDFを更新しました。" : "翻訳PDFを作成して保存しました。";
-    showStatus(`${failedLangs.length ? `${doneMessage} ${pendingMessage(failedLangs)}` : doneMessage}${engineSummary()}`, failedLangs.length > 0);
+    showStatus(failedLangs.length ? `${doneMessage} ${pendingMessage(failedLangs)}` : doneMessage, failedLangs.length > 0);
   } catch (error) {
     showStatus(`保存に失敗しました: ${error.message}`, true);
   } finally {
     setBusy(false);
   }
-});
+}
 
 ruleList.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-action]");
@@ -594,6 +707,15 @@ ruleList.addEventListener("click", async (event) => {
     selectedId = id;
     populateForm(rule);
     render();
+  }
+
+  if (action === "edit-translations" && rule) {
+    if (isBusy) return;
+    const payload = JSON.parse(JSON.stringify(rule));
+    payload.blockTranslations = payload.blockTranslations || {};
+    payload.pendingLangs = payload.pendingLangs || [];
+    openReview({ payload, pages: null, file: null, wasEditing: true, fromForm: false, failedLangs: [] });
+    showStatus("訳を直して「この内容でPDFを作成して保存」を押してください。");
   }
 
   if (action === "retry" && rule) {
