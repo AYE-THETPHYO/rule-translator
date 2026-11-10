@@ -273,6 +273,7 @@ select {
 }
 
 .stat small {
+  color: inherit;
   font-size: 0.78rem;
   opacity: 0.9;
 }
@@ -1147,6 +1148,11 @@ input[type="checkbox"] {
 
 .admin-tabs {
   width: fit-content;
+  max-width: 100%;
+}
+
+.admin-tabs .tab {
+  white-space: nowrap;
 }
 
 .tab {
