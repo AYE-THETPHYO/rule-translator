@@ -67,16 +67,22 @@ function setMode(mode) {
 
 // ===== 翻訳先言語の選択 =====
 function renderLanguageOptions(checked = DEFAULT_LANGUAGES) {
-  languageOptions.innerHTML = Object.entries(LANGS)
-    .filter(([code]) => code !== "ja")
-    .sort(([, first], [, second]) => first.name.localeCompare(second.name, "ja"))
-    .map(([code, info]) => `
-      <label class="language-option" data-search="${escapeHtml(`${info.name} ${code}`.toLocaleLowerCase("ja"))}">
+  const option = ([code, info]) => `
+      <label class="language-option" data-search="${escapeHtml(`${info.name} ${code} ${nativeLanguageName(code)}`.toLocaleLowerCase("ja"))}">
         <input type="checkbox" value="${code}" ${checked.has(code) ? "checked" : ""} />
         ${escapeHtml(info.label)}
       </label>
-    `)
-    .join("");
+    `;
+  const common = COMMON_LANGS.filter((code) => LANGS[code]).map((code) => [code, LANGS[code]]);
+  const others = Object.entries(LANGS)
+    .filter(([code]) => code !== "ja" && !COMMON_LANGS.includes(code))
+    .sort(([, first], [, second]) => first.name.localeCompare(second.name, "ja"));
+  languageOptions.innerHTML = `
+    <p class="lang-group-title">よく使う言語</p>
+    ${common.map(option).join("")}
+    <p class="lang-group-title">その他の言語</p>
+    ${others.map(option).join("")}
+  `;
   applyLanguageFilter();
   updateSelectedCount();
 }
@@ -103,11 +109,14 @@ function applyLanguageFilter() {
   languageOptions.querySelectorAll(".language-option").forEach((option) => {
     option.hidden = !option.dataset.search.includes(query);
   });
+  languageOptions.querySelectorAll(".lang-group-title").forEach((title) => {
+    title.hidden = Boolean(query);
+  });
 }
 
 function renderEngineNote() {
   engineNote.textContent = (hasChromeTranslator() ? "Chrome内蔵翻訳と、" : "")
-    + "このPCで動く翻訳AI(200言語・無料・上限なし)で翻訳します。初回だけ翻訳AIのダウンロード(数百MB)に数分かかります。"
+    + "このPCで動く翻訳AI(無料・上限なし)で翻訳します。初回だけ翻訳AIのダウンロード(数百MB)に数分かかります。"
     + "翻訳できなかった言語は「未翻訳」として保存され、あとで「翻訳をやり直す」で翻訳できます。";
 }
 

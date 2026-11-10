@@ -1,13 +1,16 @@
 // 管理者画面・利用者画面で共通に使う処理
 const STORAGE_KEY = "company-rule-pdf-translator-v1";
-const LANGUAGE_CODES = `aa ab ae af ak am an ar as av ay az ba be bg bh bi bm bn bo br bs ca ce ch co cr cs cu cv cy da de dv dz ee el en eo es et eu fa ff fi fj fo fr fy ga gd gl gn gu gv ha he hi ho hr ht hu hy hz ia id ie ig ii ik io is it iu ja jv ka kg ki kj kk kl km kn ko kr ks ku kv kw ky la lb lg li ln lo lt lu lv mg mh mi mk ml mn mr ms mt my na nb nd ne ng nl nn no nr nv ny oc oj om or os pa pi pl ps pt qu rm rn ro ru rw sa sc sd se sg si sk sl sm sn so sq sr ss st su sv sw ta te tg th ti tk tl tn to tr ts tt tw ty ug uk ur uz ve vi vo wa wo xh yi yo za zh zu`.split(" ");
+// 翻訳AI(NLLB)・Chromeで翻訳できる言語だけを表示する(古典語・人工語などは除外)
+const LANGUAGE_CODES = `af ak am ar as ay az ba be bg bm bn bo bs ca cs cy da de dz ee el en eo es et eu fa ff fi fj fo fr ga gd gl gn gu ha he hi hr ht hu hy id ig is it ja jv ka kg ki kk km kn ko ks ku ky lb lg li ln lo lt lv mg mi mk ml mn mr ms mt my ne nl nn no ny oc om or pa pl ps pt qu rn ro ru rw sc sd sg si sk sl sm sn so sq sr ss st su sv sw ta te tg th ti tk tl tn tr ts tt tw ug uk ur uz vi wo xh yi yo zh zu`.split(" ");
+// 外国人社員に多い言語(一覧の先頭に表示)
+const COMMON_LANGS = ["en", "zh", "ko", "vi", "my", "ne", "id", "tl", "pt", "es", "th", "km", "si", "bn", "hi", "ur", "uz", "mn", "lo", "fa"];
 const languageNames = new Intl.DisplayNames(["ja"], { type: "language" });
 const LANGS = {
   ja: { label: "日本語", name: "日本語" },
   ...Object.fromEntries(LANGUAGE_CODES.filter((code) => code !== "ja").map((code) => {
     const name = languageNames.of(code) || code;
     return [code, { label: name, name }];
-  })),
+  }).filter(([code, info]) => info.name && info.name.toLowerCase() !== code)), // 日本語名がない言語は表示しない
 };
 
 // 各言語の自国語表記(利用者が自分の言語を見つけやすくするため)

@@ -467,6 +467,15 @@ input[type="checkbox"] {
   background: var(--surface);
 }
 
+.lang-group-title {
+  grid-column: 1 / -1;
+  margin: 6px 4px 2px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
 .language-option {
   display: flex;
   align-items: center;
