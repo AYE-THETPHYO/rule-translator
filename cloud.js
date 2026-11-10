@@ -136,3 +136,54 @@ function authErrorMessage(error) {
   if (/rate limit/i.test(message)) return "短時間に操作が多すぎます。しばらく待ってからお試しください。";
   return message || "エラーが発生しました。";
 }
+
+// ===== 毎日の連絡(Supabase) =====
+function rowToNotice(row) {
+  return {
+    id: row.id,
+    date: row.notice_date,
+    title: row.title,
+    body: row.body || "",
+    translations: row.translations || {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function fetchNotices(limit = 90) {
+  const { data, error } = await db
+    .from("notices")
+    .select("*")
+    .order("notice_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`連絡を読み込めませんでした: ${error.message}`);
+  return data.map(rowToNotice);
+}
+
+async function saveNotice(notice) {
+  const { error } = await db.from("notices").upsert({
+    id: notice.id,
+    notice_date: notice.date,
+    title: notice.title,
+    body: notice.body,
+    translations: notice.translations,
+    created_at: notice.createdAt,
+    updated_at: notice.updatedAt,
+  });
+  if (error) throw new Error(`連絡を保存できませんでした: ${error.message}`);
+}
+
+async function deleteNotice(noticeId) {
+  const { error } = await db.from("notices").delete().eq("id", noticeId);
+  if (error) throw new Error(`連絡を削除できませんでした: ${error.message}`);
+}
+
+// 日本の日付(YYYY-MM-DD)
+function todayInJapan() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
+}
+
+function dateKeyInJapan(isoTimestamp) {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date(isoTimestamp));
+}

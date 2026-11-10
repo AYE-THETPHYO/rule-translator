@@ -169,27 +169,27 @@ function route() {
   const rule = match ? rules.find((item) => item.id === decodeURIComponent(match[1])) : null;
   if (rule) {
     const wasHidden = detailView.hidden;
-    listView.hidden = true;
+    hideMainViews();
     detailView.hidden = false;
     renderDetail(rule);
     if (wasHidden) window.scrollTo(0, 0);
     return;
   }
   if (match) {
-    listView.hidden = true;
+    hideMainViews();
     detailView.hidden = false;
     detailEl.innerHTML = '<p class="notice">このルールは見つかりませんでした。削除されたか、この端末にはまだ登録されていません。</p>';
     return;
   }
   detailView.hidden = true;
-  listView.hidden = false;
   showOriginal = false;
-  renderList();
+  showMainView();
 }
 
 async function refresh() {
   try {
-    rules = await fetchRules();
+    const [fetchedRules] = await Promise.all([fetchRules(), loadNotices()]);
+    rules = fetchedRules;
   } catch (error) {
     listEl.innerHTML = `<p class="notice">${escapeHtml(error.message)} 通信環境を確認して、ページを再読み込みしてください。</p>`;
     return;

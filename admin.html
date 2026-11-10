@@ -59,6 +59,11 @@
         </form>
       </section>
 
+      <nav id="admin-tabs" class="admin-tabs" aria-label="管理メニュー" hidden>
+        <button class="tab active" data-tab="rules" type="button">ルール・PDF</button>
+        <button class="tab" data-tab="notices" type="button">毎日の連絡(朝礼)</button>
+      </nav>
+
       <main id="admin-main" class="layout" hidden>
         <section class="panel admin-panel">
           <div class="panel-head">
@@ -158,11 +163,64 @@
           </div>
         </section>
       </main>
+
+      <section id="notice-main" class="notice-layout" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2 id="notice-form-title">今日の連絡を投稿</h2>
+            <button id="notice-new" class="secondary-btn" type="button">新規作成</button>
+          </div>
+          <form id="notice-form">
+            <div class="form-row">
+              <label class="date-field">
+                日付
+                <input id="notice-date" type="date" required />
+              </label>
+              <label class="grow">
+                タイトル
+                <input id="notice-title" type="text" placeholder="例: 11月10日の朝礼の連絡" required />
+              </label>
+            </div>
+            <label>
+              内容(日本語)
+              <textarea id="notice-body" rows="7" placeholder="例: 明日は10時から避難訓練があります。ヘルメットを用意してください。"></textarea>
+            </label>
+            <div class="notice-langs">
+              <strong>翻訳する言語</strong>
+              <div id="notice-lang-chips" class="chip-row"></div>
+              <select id="notice-lang-add" aria-label="翻訳する言語を追加"></select>
+            </div>
+            <div id="notice-status" class="status-message" role="status"></div>
+            <div class="action-row">
+              <button id="notice-translate" type="submit" class="primary-btn">翻訳する(投稿前に確認できます)</button>
+            </div>
+          </form>
+          <section id="notice-review" class="review-panel" hidden>
+            <div class="review-head">
+              <h3>翻訳の確認・修正</h3>
+              <p class="muted">名前や専門用語の訳を確認してください。直した内容が社員のアプリに表示されます。</p>
+            </div>
+            <div id="notice-review-list" class="review-list"></div>
+            <div class="action-row review-actions">
+              <button id="notice-save" class="primary-btn" type="button">この内容で投稿</button>
+              <button id="notice-cancel" class="secondary-btn" type="button">戻る</button>
+            </div>
+          </section>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>投稿済みの連絡</h2>
+            <span id="notice-count" class="badge">0件</span>
+          </div>
+          <div id="notice-list" class="manual-list"></div>
+        </div>
+      </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <script src="shared.js"></script>
     <script src="cloud.js"></script>
     <script src="admin.js"></script>
+    <script src="admin-notices.js"></script>
   </body>
 </html>

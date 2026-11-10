@@ -801,6 +801,7 @@ async function startAdmin() {
     }
     resetForm();
     render();
+    window.onAdminReady?.();
     return;
   }
   const { data } = await db.auth.getSession();
@@ -825,6 +826,7 @@ async function startAdmin() {
   }
   resetForm();
   render();
+  window.onAdminReady?.();
 }
 
 loginForm.addEventListener("submit", async (event) => {

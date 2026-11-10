@@ -24,7 +24,17 @@
         </label>
       </section>
 
-      <section id="list-view">
+      <nav id="user-tabs" class="user-tabs" aria-label="表示の切り替え" hidden>
+        <button class="tab active" data-view="notices" type="button">お知らせ <small>News</small><span id="notice-new-count" class="tab-badge" hidden></span></button>
+        <button class="tab" data-view="rules" type="button">ルール <small>Rules</small></button>
+      </nav>
+
+      <section id="notice-view" hidden>
+        <p class="feed-intro">朝礼などの毎日の連絡と、新しいルールです。休みの日の内容もここで確認できます。</p>
+        <div id="notice-feed" class="notice-feed"></div>
+      </section>
+
+      <section id="list-view" hidden>
         <h1 class="user-title">会社ルール一覧</h1>
         <p id="loading-note" class="muted"></p>
         <input id="user-search" class="list-search" type="search" placeholder="検索 / Search" aria-label="ルールを検索" />
@@ -41,5 +51,6 @@
     <script src="shared.js"></script>
     <script src="cloud.js"></script>
     <script src="user.js"></script>
+    <script src="user-notices.js"></script>
   </body>
 </html>

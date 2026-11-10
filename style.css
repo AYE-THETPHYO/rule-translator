@@ -1120,8 +1120,279 @@ input[type="checkbox"] {
   font-size: 1.35rem;
 }
 
+/* ---------- タブ ---------- */
+.admin-tabs,
+.user-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-tabs {
+  width: fit-content;
+}
+
+.tab {
+  position: relative;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active small {
+  opacity: 0.9;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, var(--teal)));
+  color: #fff;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.tab-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* ---------- 毎日の連絡(管理者) ---------- */
+.notice-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.form-row .grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.date-field input {
+  width: auto;
+}
+
+input[type="date"] {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  background: var(--surface-2);
+}
+
+.notice-langs {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 0.92rem;
+}
+
+.notice-langs select {
+  width: auto;
+  max-width: 100%;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lang-chip {
+  padding-right: 6px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.lang-chip button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lang-chip button:hover {
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.review-row input[type="text"] {
+  font-weight: 700;
+}
+
+.notice-original {
+  background: var(--surface-2);
+}
+
+.notice-date-label {
+  margin: 0 0 2px !important;
+  color: var(--primary) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700;
+}
+
+.notice-body-text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+
+/* ---------- お知らせ(利用者) ---------- */
+.feed-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.notice-feed {
+  display: grid;
+  gap: 22px;
+}
+
+.feed-day {
+  display: grid;
+  gap: 10px;
+}
+
+.feed-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.feed-date.is-today {
+  color: var(--primary);
+}
+
+.today-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.76rem;
+}
+
+.feed-item {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--teal);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.feed-item h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.feed-item .small-btn {
+  justify-self: start;
+}
+
+.feed-item.is-new {
+  border-left-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft), var(--shadow-sm);
+}
+
+.feed-rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-left-color: var(--primary);
+}
+
+.feed-rule:hover {
+  box-shadow: var(--shadow);
+}
+
+.feed-item-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feed-kind {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.rule-kind {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.new-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
+  .notice-layout {
+    grid-template-columns: 1fr;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
