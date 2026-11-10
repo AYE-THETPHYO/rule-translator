@@ -787,7 +787,7 @@ function showLogin(message = "", isError = false) {
 }
 
 // ログインを必須に戻すときは true にする(Supabase側のアクセス設定も管理者のみに戻すこと)
-const REQUIRE_LOGIN = false;
+const REQUIRE_LOGIN = true;
 
 async function startAdmin() {
   if (!REQUIRE_LOGIN) {

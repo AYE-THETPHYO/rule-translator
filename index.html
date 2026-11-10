@@ -3,46 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>会社ルール翻訳</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
+    <title>会社ルール</title>
+    <!-- 社員向け: トップページはルール・お知らせの画面を開く(管理者は admin.html から) -->
+    <meta http-equiv="refresh" content="0; url=user.html" />
+    <script>
+      window.location.replace("user.html" + window.location.hash);
+    </script>
   </head>
   <body>
-    <nav class="top-nav">
-      <a class="brand" href="index.html">会社ルール翻訳</a>
-    </nav>
-
-    <div class="app-shell">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">COMPANY RULE TRANSLATOR</p>
-          <h1>会社ルールを、すべての社員の言葉に。</h1>
-          <p class="hero-text">
-            日本語のPDF・スライド・ポスターをアップロードするだけで、写真やレイアウトをそのまま残した翻訳PDFを作成します。社員はQRコードから自分の言語で読めます。
-          </p>
-        </div>
-      </header>
-
-      <main class="role-grid">
-        <a class="role-card" href="admin.html">
-          <span class="role-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
-          </span>
-          <h2>管理者画面</h2>
-          <p>ファイルのアップロード、翻訳の確認・修正、ルールの編集・削除、QRコードの発行を行います。</p>
-          <span class="primary-btn">管理者画面を開く</span>
-        </a>
-        <a class="role-card" href="user.html">
-          <span class="role-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
-          </span>
-          <h2>利用者画面</h2>
-          <p>翻訳されたルールを、自分の言語のPDFで読みます。スマートフォンで見やすい画面です。</p>
-          <span class="primary-btn">利用者画面を開く</span>
-        </a>
-      </main>
-    </div>
+    <p><a href="user.html">会社ルールを開く</a></p>
   </body>
 </html>
