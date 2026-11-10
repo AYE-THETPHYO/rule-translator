@@ -1592,6 +1592,72 @@ input[type="date"] {
   background: var(--primary-soft);
 }
 
+/* ---------- 日本語も表示 ---------- */
+.user-bar {
+  flex-wrap: wrap;
+}
+
+.user-bar .lang-select-label {
+  flex: 1 1 100%;
+}
+
+.user-bar .both-toggle {
+  flex: 1 1 100%;
+}
+
+.both-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.both-toggle input {
+  margin-top: 0;
+}
+
+.both-toggle span {
+  display: grid;
+  line-height: 1.3;
+}
+
+.both-toggle small {
+  font-size: 0.72rem;
+}
+
+.both-toggle:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.original-ja {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.original-ja strong {
+  color: var(--text);
+}
+
+.original-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
   .notice-layout {

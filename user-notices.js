@@ -17,6 +17,24 @@ let lastSeen = "";
 let seenThisVisit = "";
 const showJapanese = new Set();
 const liveTranslations = new Map(); // 端末でその場翻訳した結果 `${id}|${lang}`
+const SHOW_BOTH_KEY = "company-rule-show-both-v1";
+const showBothInput = document.getElementById("show-both");
+let showBoth = false;
+try {
+  showBoth = localStorage.getItem(SHOW_BOTH_KEY) === "1";
+} catch {
+  /* 無視 */
+}
+showBothInput.checked = showBoth;
+showBothInput.addEventListener("change", () => {
+  showBoth = showBothInput.checked;
+  try {
+    localStorage.setItem(SHOW_BOTH_KEY, showBoth ? "1" : "0");
+  } catch {
+    /* 無視 */
+  }
+  if (!noticeView.hidden) renderNotices();
+});
 
 try {
   lastSeen = localStorage.getItem(LAST_SEEN_KEY) || "";
@@ -147,11 +165,17 @@ function renderNoticeItem(notice, lang) {
       </div>
       <h3 lang="${textLang}">${escapeHtml(text.title)}</h3>
       ${text.body ? `<p class="notice-body-text" lang="${textLang}">${escapeHtml(text.body)}</p>` : ""}
+      ${showBoth && canToggle && text.translated ? `
+        <div class="original-ja" lang="ja">
+          <span class="original-label">日本語の原文</span>
+          <strong>${escapeHtml(notice.title)}</strong>
+          ${notice.body ? `<p class="notice-body-text">${escapeHtml(notice.body)}</p>` : ""}
+        </div>` : ""}
       ${renderAttachments(notice)}
       ${canToggle && !text.translated && !showJapanese.has(notice.id)
         ? `<button class="small-btn" data-translate-notice="${notice.id}" type="button">${escapeHtml(langLabel(lang))}に翻訳する</button>`
         : ""}
-      ${canToggle && (text.translated || showJapanese.has(notice.id))
+      ${canToggle && !showBoth && (text.translated || showJapanese.has(notice.id))
         ? `<button class="small-btn" data-toggle-ja="${notice.id}" type="button">${showJapanese.has(notice.id) ? "翻訳を表示" : "日本語の原文を見る"}</button>`
         : ""}
     </article>`;
