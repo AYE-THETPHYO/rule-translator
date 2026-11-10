@@ -850,7 +850,7 @@ signupBtn.addEventListener("click", async () => {
     showLogin("メールアドレスとパスワード(6文字以上)を入力してから「新規登録」を押してください。", true);
     return;
   }
-  const { error } = await db.auth.signUp({
+  const { data, error } = await db.auth.signUp({
     email,
     password,
     options: { emailRedirectTo: window.location.href.split("#")[0] },
@@ -859,7 +859,68 @@ signupBtn.addEventListener("click", async () => {
     showLogin(authErrorMessage(error), true);
     return;
   }
+  // 登録済みのメールアドレスの場合、Supabase はエラーを返さず identities が空になる
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    showLogin("このメールアドレスはすでに登録されています。パスワードがわからない場合は「パスワードを忘れた」を押してください。", true);
+    return;
+  }
   showLogin("確認メールを送信しました。メールのリンクを開いてから、ここでログインしてください。");
+});
+
+// ===== パスワードを忘れた場合 =====
+const resetPanel = document.getElementById("reset-panel");
+const passwordResetForm = document.getElementById("reset-form");
+const resetMessage = document.getElementById("reset-message");
+
+document.getElementById("forgot-btn").addEventListener("click", async () => {
+  const email = document.getElementById("login-email").value.trim();
+  if (!email) {
+    showLogin("メールアドレスを入力してから「パスワードを忘れた」を押してください。", true);
+    return;
+  }
+  loginMessage.textContent = "送信しています…";
+  loginMessage.classList.remove("error");
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
+  if (error) {
+    showLogin(authErrorMessage(error), true);
+    return;
+  }
+  showLogin(`${email} にパスワード再設定のメールを送りました(登録されている場合)。メールのリンクを開くと、新しいパスワードを設定できます。`);
+});
+
+function showResetPanel() {
+  loginPanel.hidden = true;
+  adminMain.hidden = true;
+  resetPanel.hidden = false;
+  document.getElementById("reset-password").focus();
+}
+
+// メールのリンクから戻ってきたとき
+db.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") showResetPanel();
+});
+
+passwordResetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const password = document.getElementById("reset-password").value;
+  if (password !== document.getElementById("reset-password2").value) {
+    resetMessage.textContent = "2つのパスワードが一致しません。";
+    resetMessage.classList.add("error");
+    return;
+  }
+  resetMessage.textContent = "変更しています…";
+  resetMessage.classList.remove("error");
+  const { error } = await db.auth.updateUser({ password });
+  if (error) {
+    resetMessage.textContent = authErrorMessage(error);
+    resetMessage.classList.add("error");
+    return;
+  }
+  passwordResetForm.reset();
+  resetPanel.hidden = true;
+  history.replaceState(null, "", window.location.pathname);
+  await startAdmin();
+  showStatus("パスワードを変更しました。");
 });
 
 logoutBtn.addEventListener("click", async () => {

@@ -943,6 +943,18 @@ input[type="checkbox"] {
   margin-top: 0;
 }
 
+.link-text-btn {
+  margin-left: auto;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ---------- トップページ ---------- */
 .role-grid {
   display: grid;

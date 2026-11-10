@@ -54,6 +54,7 @@
           <div class="action-row">
             <button type="submit" class="primary-btn">ログイン</button>
             <button id="signup-btn" type="button" class="secondary-btn">新規登録</button>
+            <button id="forgot-btn" type="button" class="link-text-btn">パスワードを忘れた</button>
           </div>
           <small>初めての場合は、メールアドレスとパスワードを入力して「新規登録」を押し、届いた確認メールのリンクを開いてください。管理者として使うには、システム担当者による管理者登録が必要です。</small>
         </form>
@@ -63,6 +64,25 @@
         <button class="tab active" data-tab="rules" type="button">ルール・PDF</button>
         <button class="tab" data-tab="notices" type="button">毎日の連絡(朝礼)</button>
       </nav>
+
+      <section id="reset-panel" class="panel login-panel" hidden>
+        <h2>新しいパスワードを設定</h2>
+        <p class="muted">メールのリンクから開きました。新しいパスワード(6文字以上)を入力してください。</p>
+        <form id="reset-form">
+          <label>
+            新しいパスワード
+            <input id="reset-password" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <label>
+            もう一度入力
+            <input id="reset-password2" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <div id="reset-message" class="status-message" role="status"></div>
+          <div class="action-row">
+            <button type="submit" class="primary-btn">パスワードを変更してログイン</button>
+          </div>
+        </form>
+      </section>
 
       <main id="admin-main" class="layout" hidden>
         <section class="panel admin-panel">
