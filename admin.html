@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>管理者画面 | 会社ルールPDF翻訳システム</title>
+    <title>管理者画面 | 社内連絡・翻訳アプリ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,7 +14,7 @@
   </head>
   <body>
     <nav class="top-nav">
-      <a class="brand" href="admin.html">会社ルール翻訳(管理者)</a>
+      <a class="brand" href="admin.html">社内連絡・翻訳アプリ(管理者)</a>
       <div class="nav-links">
         <a href="admin.html" class="active">管理者画面</a>
         <a href="user.html">利用者画面</a>
@@ -27,7 +27,7 @@
       <header class="hero">
         <div>
           <p class="eyebrow">管理者画面</p>
-          <h1>会社ルールの登録・翻訳</h1>
+          <h1>お知らせ・ルールの登録と翻訳</h1>
           <p class="hero-text">
             日本語のPDF・スライド・ポスター画像をアップロードすると、日本語の文字を読み取って各言語に翻訳し、写真やレイアウトをそのまま残した翻訳PDFを作成します。利用者はQRコードから閲覧できます。
           </p>
@@ -205,6 +205,28 @@
               内容(日本語)
               <textarea id="notice-body" rows="7" placeholder="例: 明日は10時から避難訓練があります。ヘルメットを用意してください。"></textarea>
             </label>
+            <div class="form-row">
+              <label class="priority-field">
+                重要度
+                <select id="notice-priority">
+                  <option value="normal">通常</option>
+                  <option value="important">重要(上部に表示)</option>
+                  <option value="urgent">緊急(上部に赤で表示)</option>
+                </select>
+              </label>
+              <label id="notice-pin-field" class="date-field" hidden>
+                上部に表示する期限
+                <input id="notice-pin-until" type="date" />
+              </label>
+            </div>
+            <div class="attach-field">
+              <label>
+                写真・ファイルを添付(任意)
+                <input id="notice-files" type="file" multiple accept="image/*,application/pdf,.pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt" />
+              </label>
+              <small>写真は自動で見やすい大きさに縮小します。1ファイル20MBまで。</small>
+              <div id="notice-attachments" class="attachment-list"></div>
+            </div>
             <div class="notice-langs">
               <strong>翻訳する言語</strong>
               <div id="notice-lang-chips" class="chip-row"></div>

@@ -145,6 +145,9 @@ function rowToNotice(row) {
     title: row.title,
     body: row.body || "",
     translations: row.translations || {},
+    attachments: row.attachments || [],
+    priority: row.priority || "normal",
+    pinnedUntil: row.pinned_until || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -168,6 +171,9 @@ async function saveNotice(notice) {
     title: notice.title,
     body: notice.body,
     translations: notice.translations,
+    attachments: notice.attachments || [],
+    priority: notice.priority || "normal",
+    pinned_until: notice.priority && notice.priority !== "normal" && notice.pinnedUntil ? notice.pinnedUntil : null,
     created_at: notice.createdAt,
     updated_at: notice.updatedAt,
   });
@@ -186,4 +192,28 @@ function todayInJapan() {
 
 function dateKeyInJapan(isoTimestamp) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date(isoTimestamp));
+}
+
+// ===== お知らせの添付ファイル(写真・PDFなど) =====
+// 保存名は英数字だけにする(日本語のファイル名は表示用に別に保存)
+async function uploadNoticeFile(noticeId, file) {
+  const ext = (file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1] || "bin").toLowerCase();
+  const key = `notice-files/${noticeId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await db.storage.from(FILE_BUCKET).upload(key, file, {
+    contentType: file.type || "application/octet-stream",
+    cacheControl: "3600",
+  });
+  if (error) throw new Error(`「${file.name}」をアップロードできませんでした: ${error.message}`);
+  return { name: file.name, path: key, type: file.type || "", size: file.size };
+}
+
+async function deleteStoredFiles(paths) {
+  if (!paths.length) return;
+  const { error } = await db.storage.from(FILE_BUCKET).remove(paths);
+  if (error) throw new Error(`ファイルを削除できませんでした: ${error.message}`);
+}
+
+function storedFileUrl(filePath, downloadName = "") {
+  const { data } = db.storage.from(FILE_BUCKET).getPublicUrl(filePath, downloadName ? { download: downloadName } : undefined);
+  return data.publicUrl;
 }
