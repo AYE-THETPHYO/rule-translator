@@ -49,6 +49,7 @@ function showStatus(message, isError = false) {
 
 async function loadRules() {
   rules = await fetchRules();
+  await loadContentAuthors().catch(() => {});
   if (!getRuleById(selectedId)) selectedId = rules[0]?.id || "";
 }
 
@@ -340,6 +341,7 @@ function renderList() {
             <span>${escapeHtml(rule.pdfName || "PDF")}</span>
             ${updated ? `<span>更新: ${updated}</span>` : ""}
           </div>
+          ${authorLine("rule", rule.id)}
           <div class="card-actions">
             <button class="small-btn" data-action="select" data-id="${rule.id}" type="button">閲覧</button>
             <button class="small-btn" data-action="edit" data-id="${rule.id}" type="button">編集</button>

@@ -46,6 +46,7 @@ async function fetchRules() {
 async function saveRule(rule) {
   const { error } = await db.from("rules").upsert(ruleToRow(rule));
   if (error) throw new Error(`ルールを保存できませんでした: ${error.message}`);
+  await loadContentAuthors().catch(() => {});
 }
 
 async function deleteRule(ruleId) {
@@ -178,6 +179,7 @@ async function saveNotice(notice) {
     updated_at: notice.updatedAt,
   });
   if (error) throw new Error(`連絡を保存できませんでした: ${error.message}`);
+  await loadContentAuthors().catch(() => {});
 }
 
 async function deleteNotice(noticeId) {
@@ -216,4 +218,29 @@ async function deleteStoredFiles(paths) {
 function storedFileUrl(filePath, downloadName = "") {
   const { data } = db.storage.from(FILE_BUCKET).getPublicUrl(filePath, downloadName ? { download: downloadName } : undefined);
   return data.publicUrl;
+}
+
+// ===== 追加・更新した管理者(管理者だけが読める記録) =====
+const contentAuthors = new Map(); // "rule|id" / "notice|id" -> 記録
+
+async function loadContentAuthors() {
+  const { data, error } = await db.from("content_authors").select("*");
+  if (error) throw new Error(`作成者の記録を読み込めませんでした: ${error.message}`);
+  contentAuthors.clear();
+  (data || []).forEach((row) => contentAuthors.set(`${row.content_type}|${row.content_id}`, row));
+}
+
+function authorLine(type, id) {
+  const record = contentAuthors.get(`${type}|${id}`);
+  if (!record) return "";
+  const format = (time) => new Date(time).toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  const updatedLater = record.updated_by !== record.created_by || new Date(record.updated_at) - new Date(record.created_at) > 60 * 1000;
+  return `
+    <p class="author-line" title="この表示は管理者だけに見えます">
+      <span aria-hidden="true">👤</span>
+      追加: ${escapeHtml(record.created_by || "(不明)")}(${format(record.created_at)})
+      ${updatedLater ? `<br />更新: ${escapeHtml(record.updated_by || "(不明)")}(${format(record.updated_at)})` : ""}
+    </p>`;
 }

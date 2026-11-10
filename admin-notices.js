@@ -341,6 +341,7 @@ document.getElementById("notice-save").addEventListener("click", async () => {
 async function loadAdminNotices() {
   try {
     notices = await fetchNotices(200);
+    await loadContentAuthors().catch(() => {});
     if (!noticeEditingId) noticeLangs = defaultNoticeLangs();
     renderNoticeLangs();
     renderNoticeList();
@@ -378,6 +379,7 @@ function renderNoticeList() {
             ${notice.attachments.length ? `<span>📎 ${notice.attachments.length}件</span>` : ""}
             ${notice.priority !== "normal" && notice.pinnedUntil ? `<span>${pinned ? "上部に表示中" : "表示期限切れ"}(〜${escapeHtml(notice.pinnedUntil.slice(5).replace("-", "/"))})</span>` : ""}
           </div>
+          ${authorLine("notice", notice.id)}
           <div class="card-actions">
             <button class="small-btn" data-notice-action="edit" data-id="${notice.id}" type="button">編集</button>
             <button class="small-btn" data-notice-action="fix" data-id="${notice.id}" type="button">訳を修正</button>

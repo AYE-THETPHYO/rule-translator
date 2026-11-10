@@ -1658,6 +1658,17 @@ input[type="date"] {
   color: var(--primary);
 }
 
+/* ---------- 追加・更新した管理者(管理者画面のみ) ---------- */
+.author-line {
+  margin: 0 0 10px !important;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--muted) !important;
+  font-size: 0.78rem !important;
+  line-height: 1.6;
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
   .notice-layout {
