@@ -165,6 +165,17 @@ async function fetchNotices(limit = 90) {
   return data.map(rowToNotice);
 }
 
+// 指定した日付のお知らせ(古い日付も検索できる)
+async function fetchNoticesByDate(date) {
+  const { data, error } = await db
+    .from("notices")
+    .select("*")
+    .eq("notice_date", date)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`お知らせを検索できませんでした: ${error.message}`);
+  return data.map(rowToNotice);
+}
+
 async function saveNotice(notice) {
   const { error } = await db.from("notices").upsert({
     id: notice.id,

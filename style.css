@@ -1675,6 +1675,53 @@ input[type="date"] {
   line-height: 1.6;
 }
 
+/* ---------- 日付で探す ---------- */
+.feed-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.feed-date-search {
+  flex: 1 1 260px;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.feed-date-search small,
+#feed-show-all small {
+  color: inherit;
+  font-size: 0.74rem;
+  opacity: 0.8;
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-nav input[type="date"] {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.date-nav .small-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
   .notice-layout {

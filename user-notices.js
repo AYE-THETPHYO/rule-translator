@@ -181,7 +181,85 @@ function renderNoticeItem(notice, lang) {
     </article>`;
 }
 
+function ruleFeedItem(rule, key) {
+  return `
+    <a class="feed-item feed-rule ${isNew(rule.updatedAt) ? "is-new" : ""}" href="#rule-${encodeURIComponent(rule.id)}">
+      <span class="pdf-icon" aria-hidden="true">PDF</span>
+      <div>
+        <div class="feed-item-head">
+          <span class="feed-kind rule-kind">${rule.createdAt && dateKeyInJapan(rule.createdAt) === key ? "新しいルール" : "ルール更新"}</span>
+          ${isNew(rule.updatedAt) ? '<span class="new-badge">NEW</span>' : ""}
+        </div>
+        <h3>${escapeHtml(rule.title)}</h3>
+      </div>
+    </a>`;
+}
+
+// ===== 日付で探す =====
+const feedDateInput = document.getElementById("feed-date");
+const feedShowAll = document.getElementById("feed-show-all");
+let searchDate = "";
+let searchNotices = [];
+let searchError = "";
+
+function shiftDate(dateKey, days) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function searchByDate(dateKey) {
+  searchDate = dateKey;
+  feedDateInput.value = dateKey;
+  feedShowAll.hidden = !dateKey;
+  if (!dateKey) {
+    renderNotices();
+    return;
+  }
+  noticeFeed.innerHTML = '<p class="pdf-loading">検索しています… / Searching…</p>';
+  try {
+    searchNotices = await fetchNoticesByDate(dateKey);
+    searchError = "";
+  } catch (error) {
+    searchNotices = [];
+    searchError = error.message;
+  }
+  if (searchDate === dateKey) renderNotices();
+}
+
+feedDateInput.max = todayInJapan();
+feedDateInput.addEventListener("change", () => searchByDate(feedDateInput.value));
+feedShowAll.addEventListener("click", () => searchByDate(""));
+document.getElementById("feed-prev-day").addEventListener("click", () => searchByDate(shiftDate(searchDate || todayInJapan(), -1)));
+document.getElementById("feed-next-day").addEventListener("click", () => {
+  const next = shiftDate(searchDate || todayInJapan(), 1);
+  searchByDate(next > todayInJapan() ? todayInJapan() : next);
+});
+
+function renderDateResults() {
+  const lang = prefs.lang;
+  if (searchError) {
+    noticeFeed.innerHTML = `<p class="notice">${escapeHtml(searchError)}</p>`;
+    return;
+  }
+  const items = [
+    ...searchNotices.map((notice) => renderNoticeItem(notice, lang)),
+    ...rules
+      .filter((rule) => rule.updatedAt && dateKeyInJapan(rule.updatedAt) === searchDate)
+      .map((rule) => ruleFeedItem(rule, searchDate)),
+  ];
+  noticeFeed.innerHTML = `
+    <section class="feed-day">
+      <h2 class="feed-date ${searchDate === todayInJapan() ? "is-today" : ""}">${searchDate === todayInJapan() ? '<span class="today-badge">今日</span>' : ""}${escapeHtml(formatFeedDate(searchDate, lang))}</h2>
+      ${items.join("") || '<p class="empty-state">この日のお知らせはありません。<br />No notices on this day.</p>'}
+    </section>`;
+}
+
 function renderNotices() {
+  if (searchDate) {
+    renderDateResults();
+    return;
+  }
   const lang = prefs.lang;
   const today = todayInJapan();
 
@@ -217,17 +295,7 @@ function renderNotices() {
       const day = days.get(key);
       const items = [
         ...day.notices.map((notice) => renderNoticeItem(notice, lang)),
-        ...day.rules.map((rule) => `
-          <a class="feed-item feed-rule ${isNew(rule.updatedAt) ? "is-new" : ""}" href="#rule-${encodeURIComponent(rule.id)}">
-            <span class="pdf-icon" aria-hidden="true">PDF</span>
-            <div>
-              <div class="feed-item-head">
-                <span class="feed-kind rule-kind">${rule.createdAt && dateKeyInJapan(rule.createdAt) === key ? "新しいルール" : "ルール更新"}</span>
-                ${isNew(rule.updatedAt) ? '<span class="new-badge">NEW</span>' : ""}
-              </div>
-              <h3>${escapeHtml(rule.title)}</h3>
-            </div>
-          </a>`),
+        ...day.rules.map((rule) => ruleFeedItem(rule, key)),
       ];
       return `
         <section class="feed-day">

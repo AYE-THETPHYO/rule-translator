@@ -35,6 +35,17 @@
 
       <section id="notice-view" hidden>
         <p class="feed-intro">朝礼などの毎日の連絡と、新しいルールです。休みの日の内容もここで確認できます。</p>
+        <div class="feed-tools">
+          <label class="feed-date-search">
+            <span>📅 日付で探す <small>Search by date</small></span>
+            <span class="date-nav">
+              <button id="feed-prev-day" class="small-btn" type="button" aria-label="前の日 / Previous day">◀</button>
+              <input id="feed-date" type="date" />
+              <button id="feed-next-day" class="small-btn" type="button" aria-label="次の日 / Next day">▶</button>
+            </span>
+          </label>
+          <button id="feed-show-all" class="secondary-btn" type="button" hidden>すべて表示 <small>Show all</small></button>
+        </div>
         <div id="notice-feed" class="notice-feed"></div>
       </section>
 
