@@ -16,6 +16,7 @@ function rowToRule(row) {
     blockTranslations: row.block_translations || {},
     pdfName: row.pdf_name || "",
     pendingLangs: row.pending_langs || [],
+    titleTranslations: row.title_translations || {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -32,6 +33,7 @@ function ruleToRow(rule) {
     block_translations: rule.blockTranslations || {},
     pdf_name: rule.pdfName || null,
     pending_langs: rule.pendingLangs || [],
+    title_translations: rule.titleTranslations || {},
     created_at: rule.createdAt,
     updated_at: rule.updatedAt,
   };

@@ -1722,6 +1722,82 @@ input[type="date"] {
   padding: 0;
 }
 
+/* ---------- 掲示用チラシ・AI下書き ---------- */
+.flyer-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary-soft), var(--surface) 70%);
+}
+
+.flyer-card h4,
+.flyer-card p {
+  margin: 0;
+}
+
+.flyer-options {
+  display: grid;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.flyer-options select {
+  width: auto;
+}
+
+.flyer-lang {
+  cursor: pointer;
+}
+
+.flyer-lang input {
+  margin: 0;
+}
+
+.flyer-lang:has(input:checked) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.flyer-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.flyer-check input {
+  margin: 0;
+}
+
+#flyer-result {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-draft {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 45%, var(--line));
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  font-size: 0.92rem;
+}
+
+.ai-draft-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-draft-row input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
   .notice-layout {

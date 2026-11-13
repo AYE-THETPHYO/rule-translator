@@ -98,9 +98,9 @@
             </label>
 
             <label>
-              日本語のファイル(PDF・スライドPDF・画像)
+              日本語のファイル(PDF・スライドPDF・画像) ※なくても作成できます
               <input id="pdfUpload" name="pdfUpload" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" />
-              <small>PowerPointは「ファイル → エクスポート → PDF」で保存してからアップロードしてください。編集時は未選択でも元のファイルを維持します。</small>
+              <small>ファイルがない場合は、下の「日本語本文」にルールの文章を入力するだけで、アプリがルールとPDF(日本語・各言語)を作成します。PowerPointは「ファイル → エクスポート → PDF」で保存してからアップロードしてください。編集時は未選択でも元のファイルを維持します。</small>
             </label>
 
             <fieldset>
@@ -137,8 +137,17 @@
               <div id="blocks-list" class="blocks-list"></div>
             </div>
 
+            <div class="ai-draft">
+              <strong>✨ AIにルールの下書きを作ってもらう(任意)</strong>
+              <div class="ai-draft-row">
+                <input id="ai-topic" type="text" placeholder="テーマ 例: 休憩室の使い方、フォークリフトの安全" />
+                <button id="ai-draft" class="secondary-btn" type="button">AIで下書き</button>
+              </div>
+              <small>パソコンのChromeに入っているAIを使います(無料)。Chromeの版によっては使えません。作られた文章は必ず確認・修正してください。</small>
+            </div>
+
             <label id="text-section">
-              日本語本文
+              日本語本文(ファイルなしで作成する場合は、ここにルールを入力)
               <textarea id="japaneseText" name="japaneseText" rows="8" placeholder="ファイルをアップロードすると本文が自動で読み取られます。読み取れない場合はここに入力してください。"></textarea>
             </label>
 
@@ -262,7 +271,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <script src="shared.js"></script>
     <script src="cloud.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="admin.js"></script>
     <script src="admin-notices.js"></script>
+    <script src="admin-flyer.js"></script>
   </body>
 </html>

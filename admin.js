@@ -338,7 +338,7 @@ function renderList() {
             <span>翻訳PDF ${langCount}言語</span>
             ${rule.pendingLangs?.length ? `<span class="pending-tag">未翻訳: ${escapeHtml(rule.pendingLangs.map((lang) => LANGS[lang]?.name || lang).join("、"))}</span>` : ""}
             <span>${rule.mode === "layout" ? "レイアウト維持" : "テキストのみ"}</span>
-            <span>${escapeHtml(rule.pdfName || "PDF")}</span>
+            <span>${escapeHtml(rule.pdfName || "アプリで作成")}</span>
             ${updated ? `<span>更新: ${updated}</span>` : ""}
           </div>
           ${authorLine("rule", rule.id)}
@@ -388,7 +388,9 @@ function renderViewer() {
       </div>
       <img src="${qrImageUrl(rule.id)}" alt="${escapeHtml(rule.title)}のQRコード" />
     </div>
+    <div id="flyer-card" class="flyer-card"></div>
   `;
+  window.renderFlyerCard?.(rule);
 
   viewerCard.querySelectorAll("[data-lang]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -435,8 +437,15 @@ async function translatePayload(rule, langs) {
         rule.blockTranslations[lang] = texts;
         rule.translations[lang] = texts.join("\n");
       } else {
-        rule.translations[lang] = await translateText(rule.sourceText, lang);
+        // 1行ずつ翻訳する(チラシで日本語と訳を1行ずつ並べるため)
+        const lines = [];
+        for (const line of rule.sourceText.split(/\n+/).map((text) => text.trim()).filter(Boolean)) {
+          lines.push((await translateText(line, lang)).replace(/\s*\n+\s*/g, " "));
+        }
+        rule.translations[lang] = lines.join("\n");
       }
+      rule.titleTranslations = rule.titleTranslations || {};
+      rule.titleTranslations[lang] = (await translateText(rule.title, lang)).replace(/\s*\n+\s*/g, " ");
       lastEngines[lang] = [...translationEnginesUsed];
     } catch {
       failed.push(lang);
@@ -514,8 +523,8 @@ ruleForm.addEventListener("submit", async (event) => {
   const selectedLanguages = checkedLanguages();
   const chromeReady = prepareChromeTranslators(selectedLanguages);
 
-  if (!editingId && !currentFile) {
-    showStatus("新規追加時は日本語のファイル(PDF・画像)をアップロードしてください。", true);
+  if (!editingId && !currentFile && !japaneseTextInput.value.trim()) {
+    showStatus("日本語のファイルをアップロードするか、「日本語本文」にルールの文章を入力してください。", true);
     return;
   }
 
@@ -554,6 +563,7 @@ ruleForm.addEventListener("submit", async (event) => {
       blocks: blocks.map(({ page, x0, y0, x1, y1, lineHeight, text }) => ({ page, x0, y0, x1, y1, lineHeight, text })),
       translations: { ja: sourceText },
       blockTranslations: {},
+      titleTranslations: {},
       pendingLangs: [],
       pdfName: currentFile ? currentFile.name : previous?.pdfName || "",
       createdAt: previous?.createdAt || new Date().toISOString(),
@@ -618,7 +628,13 @@ function renderReview() {
     ? payload.blocks.map((block, index) => ({ ja: block.text, text: blockTexts[index] || "", index }))
     : [{ ja: payload.sourceText, text: payload.translations[reviewLang] || "", index: -1 }];
 
-  reviewList.innerHTML = rows
+  const titleTr = payload.titleTranslations?.[reviewLang];
+  const titleRow = titleTr === undefined ? "" : `
+      <div class="review-row">
+        <div class="review-ja"><span class="review-num">題</span>${escapeHtml(payload.title)}</div>
+        <input type="text" data-index="title" lang="${reviewLang}" ${dirAttr} value="${escapeHtml(titleTr)}" />
+      </div>`;
+  reviewList.innerHTML = titleRow + rows
     .map((row, position) => `
       <div class="review-row">
         <div class="review-ja"><span class="review-num">${position + 1}</span>${escapeHtml(row.ja)}</div>
@@ -635,6 +651,10 @@ reviewTabs.addEventListener("click", (event) => {
 });
 
 reviewList.addEventListener("input", (event) => {
+  if (event.target.dataset.index === "title" && reviewState) {
+    reviewState.payload.titleTranslations[reviewLang] = event.target.value;
+    return;
+  }
   const index = Number(event.target.dataset.index);
   if (Number.isNaN(index) || !reviewState) return;
   const { payload } = reviewState;
@@ -675,6 +695,11 @@ async function finishSave() {
       const isPdf = file.type === "application/pdf";
       const original = isPdf ? file : await createOverlayPdf(pages.map((page) => page.canvas), [], null, "ja");
       await savePdf(payload.id, "ja", original);
+    }
+    // ファイルなしで作成したルール: 入力した文章から日本語のPDFも作成する
+    if (!file && !payload.pdfName) {
+      showStatus("日本語のPDFを作成しています…");
+      await savePdf(payload.id, "ja", await createTextPdf({ title: payload.title, text: payload.sourceText, lang: "ja" }));
     }
     const pdfLangs = Object.keys(payload.translations).filter((lang) => lang !== "ja");
     await buildTranslatedPdfs(payload, pages, pdfLangs);
@@ -724,6 +749,7 @@ ruleList.addEventListener("click", async (event) => {
     if (isBusy) return;
     const payload = JSON.parse(JSON.stringify(rule));
     payload.blockTranslations = payload.blockTranslations || {};
+    payload.titleTranslations = payload.titleTranslations || {};
     payload.pendingLangs = payload.pendingLangs || [];
     openReview({ payload, pages: null, file: null, wasEditing: true, fromForm: false, failedLangs: [] });
     showStatus("訳を直して「この内容でPDFを作成して保存」を押してください。");
