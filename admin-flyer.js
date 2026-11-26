@@ -10,6 +10,13 @@ const FLYER_LANG_COLORS = ["#1d3fae", "#8a4b00", "#0b6b4f"];
 const FLYER_MAX_LANGS = 3;
 let flyerBlob = null;
 
+// 会社ロゴ(チラシの右上に入れる)
+const companyLogo = new Image();
+companyLogo.src = "logo.png";
+function logoReady() {
+  return companyLogo.complete && companyLogo.naturalWidth > 0;
+}
+
 // ルールの言葉に合う絵(絵文字)を自動で選ぶ
 const FLYER_ICONS = [
   [/ヘルメット|保護帽/, "⛑️"], [/安全靴|靴/, "🥾"], [/手袋/, "🧤"], [/マスク/, "😷"],
@@ -70,7 +77,7 @@ function drawQr(ctx, text, x, y, size) {
   }
 }
 
-async function createFlyerPdf({ rule, langs, theme, withQr, withIcons = false, image = null }) {
+async function createFlyerPdf({ rule, langs, theme, withQr, withIcons = false, image = null, withLogo = true }) {
   const { jsPDF } = window.jspdf;
   const W = 1240;
   const H = 1754; // A4
@@ -100,11 +107,13 @@ async function createFlyerPdf({ rule, langs, theme, withQr, withIcons = false, i
   };
 
   // ---- 見出し ----
+  const logo = withLogo && logoReady() ? { w: 250, h: Math.round(250 * companyLogo.naturalHeight / companyLogo.naturalWidth) } : null;
+  const titleW = logo ? maxW - logo.w - 60 : maxW - 40;
   let titleSize = 76;
   let titleLines;
   do {
     ctx.font = `bold ${titleSize}px ${PDF_FONT}`;
-    titleLines = wrapCanvasText(ctx, rule.title, maxW - 40, "ja");
+    titleLines = wrapCanvasText(ctx, rule.title, titleW, "ja");
     if (titleLines.length <= 2 || titleSize <= 48) break;
     titleSize -= 6;
   } while (true);
@@ -112,8 +121,11 @@ async function createFlyerPdf({ rule, langs, theme, withQr, withIcons = false, i
   const titleTr = langs
     .map((lang) => ({ lang, text: rule.titleTranslations?.[lang] || "" }))
     .filter((entry) => entry.text)
-    .map((entry) => ({ ...entry, lines: wrapCanvasText(ctx, entry.text, maxW - 40, entry.lang) }));
-  const headerH = 150 + titleLines.length * titleSize * 1.25 + titleTr.reduce((sum, entry) => sum + entry.lines.length * 44, 0) + 40;
+    .map((entry) => ({ ...entry, lines: wrapCanvasText(ctx, entry.text, titleW, entry.lang) }));
+  const headerH = Math.max(
+    150 + titleLines.length * titleSize * 1.25 + titleTr.reduce((sum, entry) => sum + entry.lines.length * 44, 0) + 40,
+    logo ? logo.h + 110 : 0,
+  );
   const footerH = withQr ? 250 : 80;
 
   // ---- 本文の大きさを、1枚に収まるように決める ----
@@ -173,6 +185,19 @@ async function createFlyerPdf({ rule, langs, theme, withQr, withIcons = false, i
     if (page === 1) {
       ctx.fillStyle = colors.color;
       ctx.fillRect(0, 0, W, headerH);
+      if (logo) {
+        const lx = W - M - logo.w;
+        const ly = 54;
+        ctx.fillStyle = "#ffffff";
+        roundedRect(ctx, lx - 14, ly - 14, logo.w + 28, logo.h + 28, 18);
+        ctx.fill();
+        ctx.save();
+        roundedRect(ctx, lx, ly, logo.w, logo.h, 10);
+        ctx.clip();
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(companyLogo, lx, ly, logo.w, logo.h);
+        ctx.restore();
+      }
       ctx.fillStyle = "rgba(255,255,255,0.22)";
       roundedRect(ctx, M, 54, 30 + (colors.label.length * 40) + colors.en.length * 22 + 50, 60, 30);
       ctx.fill();
@@ -294,6 +319,7 @@ window.renderFlyerCard = (rule) => {
         </div>
       </div>
       <label class="flyer-check"><input id="flyer-qr" type="checkbox" checked /> QRコードを入れる(スマートフォンで全言語を読めます)</label>
+      <label class="flyer-check"><input id="flyer-logo" type="checkbox" checked /> 会社ロゴを入れる(うんまいファクトリー)</label>
       <label class="flyer-check"><input id="flyer-icons" type="checkbox" checked /> 絵(アイコン)を自動で入れる(ヘルメット・手袋・禁煙など)</label>
       <label>
         写真・イラストを入れる(任意)
@@ -328,6 +354,7 @@ window.renderFlyerCard = (rule) => {
       flyerBlob = await createFlyerPdf({
         rule,
         withIcons: document.getElementById("flyer-icons").checked,
+        withLogo: document.getElementById("flyer-logo").checked,
         image: imageFile ? await createImageBitmap(imageFile) : null,
         langs: [...card.querySelectorAll(".flyer-lang input:checked")].map((input) => input.value),
         theme: document.getElementById("flyer-theme").value,
