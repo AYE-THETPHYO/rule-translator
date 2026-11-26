@@ -1811,9 +1811,19 @@ input[type="date"] {
   box-shadow: var(--shadow-sm);
 }
 
+.brand-logo-sub {
+  height: 28px;
+  padding: 3px 6px;
+  background: #ffffff;
+}
+
 @media (max-width: 480px) {
   .brand.has-logo span {
     font-size: 0.88rem;
+  }
+
+  .brand-logo-sub {
+    height: 24px;
   }
 
   .brand-logo {
