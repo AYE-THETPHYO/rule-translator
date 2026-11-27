@@ -304,6 +304,7 @@ function setBusy(busy) {
 
 // ===== 一覧・プレビュー =====
 function renderStats() {
+  if (!statRules || !statLangs) return; // 見出しを外したため表示しない
   statRules.textContent = rules.length;
   const langs = new Set(rules.flatMap((rule) => Object.keys(rule.translations).filter((key) => key !== "ja")));
   statLangs.textContent = langs.size;
