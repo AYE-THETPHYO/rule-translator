@@ -1831,6 +1831,16 @@ input[type="date"] {
   }
 }
 
+/* ---------- バナー ---------- */
+.app-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 18px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
 /* ---------- レスポンシブ ---------- */
 @media (max-width: 1020px) {
   .notice-layout {
